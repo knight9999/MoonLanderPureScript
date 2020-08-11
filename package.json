@@ -1,0 +1,17 @@
+{
+  "name": "purescript-moon-lander",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "spago bundle-app --to public/app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "purescript": "^0.13.8",
+    "spago": "^0.15.3"
+  }
+}
