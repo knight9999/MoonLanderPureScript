@@ -146,15 +146,18 @@ explain = do
       [ HH.text "ロケット画像(rocket.png)"
       , HH.br []
       , HH.a
-        [ HP.attr (HC.AttrName "href") "(C) KENNEY"
+        [ HP.attr (HC.AttrName "href") "https://www.kenney.nl/assets"
         , HP.attr (HC.AttrName "target") "_blank" ]
-        [ HH.text "https://www.kenney.nl/assets" ]
+        [ HH.text "(C) KENNEY" ]
       ]
     , HH.h3 [] [HH.text "参考プログラム (Python)" ]
     , HH.div []
       [ HH.text "日経ソフトウェア 2020年5月号　第２付録"
       , HH.br []
-      , HH.text "5日でできる！ Pythonでゲーム作成入門"
+      , HH.a
+        [ HP.attr (HC.AttrName "href") "http://bizboard.nikkeibp.co.jp/kijiken/summary/20200324/NSW0269F_4688963a.html"
+        , HP.attr (HC.AttrName "target") "_blank" ]
+        [ HH.text "5日でできる！ Pythonでゲーム作成入門／第四日目" ]
       ]
     ]
 

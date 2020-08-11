@@ -10,3 +10,8 @@ $ npm run build
 
 `public/index.html`をブラウザ(Chrome, Firefoxなど)で開きます
 
+
+# プレイ
+
+https://knight9999.github.io/MoonLanderPureScriptPlay/
+
