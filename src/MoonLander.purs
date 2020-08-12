@@ -159,6 +159,14 @@ explain = do
         , HP.attr (HC.AttrName "target") "_blank" ]
         [ HH.text "5日でできる！ Pythonでゲーム作成入門／第四日目" ]
       ]
+    , HH.h3 [] [HH.text "Github"]
+    , HH.div []
+      [ HH.a
+        [ HP.attr (HC.AttrName "href") "https://github.com/knight9999/MoonLanderPureScript"
+        , HH.attr (HC.AttrName "target") "_blank"
+        ]
+        [ HH.text "https://github.com/knight9999/MoonLanderPureScript" ]
+      ]
     ]
 
 
