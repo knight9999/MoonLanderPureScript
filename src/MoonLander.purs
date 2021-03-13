@@ -11,7 +11,7 @@ import Halogen.HTML as HH
 import Halogen.HTML.Core as HC
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import Halogen.Query.EventSource as ES
+import Halogen.Query.Event as ES
 
 import Graphics.Canvas (Context2D)
 import Graphics.Canvas as GC
@@ -78,7 +78,7 @@ type State = {
   }
 }
 
-component :: forall q i o m. (MonadAff m) => (MonadEffect m) => H.Component HH.HTML q i o m
+component :: forall q i o m. (MonadAff m) => (MonadEffect m) => H.Component q i o m
 component =
   H.mkComponent
     { initialState
@@ -234,12 +234,12 @@ handleAction = case _ of
     -- Setup KeyHandler
     document <- H.liftEffect $ Web.document =<< Web.window
     H.subscribe' \sid ->
-      ES.eventListenerEventSource
+      ES.eventListener
         KET.keyup
         (HTMLDocument.toEventTarget document)
         (map (HandleKeyUp sid) <<< KE.fromEvent)
     H.subscribe' \sid ->
-      ES.eventListenerEventSource
+      ES.eventListener
         KET.keydown
         (HTMLDocument.toEventTarget document)
         (map (HandleKeyDown sid) <<< KE.fromEvent)
