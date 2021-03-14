@@ -37,16 +37,18 @@ import Web.HTML.Window (document) as Web
 import Web.UIEvent.KeyboardEvent (KeyboardEvent)
 import Web.UIEvent.KeyboardEvent as KE
 import Web.UIEvent.KeyboardEvent.EventTypes as KET
--- import Web.TouchEvent.TouchEvent(TouchEvent)
--- import Web.TouchEvent.TouchEvent as TE
--- import Web.TouchEvent.EventTypes as TET
+import Web.TouchEvent.TouchEvent(TouchEvent)
+import Web.TouchEvent.TouchEvent as TE
+import Web.TouchEvent.EventTypes as TET
 
 data Action
   = Init | Draw 
+  | HandleUp
+  | HandleDown
   | HandleKeyUp H.SubscriptionId KeyboardEvent
   | HandleKeyDown H.SubscriptionId KeyboardEvent
-  -- | HandleTouchStart H.SubscriptionId TouchEvent
-  -- | HandleTouchEnd H.SubscriptionId TouchEvent
+  | HandleTouchStart H.SubscriptionId TouchEvent
+  | HandleTouchEnd H.SubscriptionId TouchEvent
 
 data GameResult
   = Success | Failure
@@ -235,62 +237,80 @@ handleAction = case _ of
     document <- H.liftEffect $ Web.document =<< Web.window
     H.subscribe' \sid ->
       ES.eventListener
-        KET.keyup
-        (HTMLDocument.toEventTarget document)
-        (map (HandleKeyUp sid) <<< KE.fromEvent)
-    -- H.subscribe' \sid ->
-    --   ES.eventListener
-    --     TET.touchstart
-    --     (HTMLDocument.toEventTarget document)
-    --     (map (HandleTouchStart sid) <<< TE.fromEvent)
-    H.subscribe' \sid ->
-      ES.eventListener
         KET.keydown
         (HTMLDocument.toEventTarget document)
         (map (HandleKeyDown sid) <<< KE.fromEvent)
+    H.subscribe' \sid ->
+      ES.eventListener
+        KET.keyup
+        (HTMLDocument.toEventTarget document)
+        (map (HandleKeyUp sid) <<< KE.fromEvent)
+    H.subscribe' \sid ->
+      ES.eventListener
+        TET.touchstart
+        (HTMLDocument.toEventTarget document)
+        (map (HandleTouchStart sid) <<< TE.fromEvent)
+    H.subscribe' \sid ->
+      ES.eventListener
+        TET.touchstart
+        (HTMLDocument.toEventTarget document)
+        (map (HandleTouchEnd sid) <<< TE.fromEvent)
     pure unit
 
   HandleKeyDown sid ev -> do
-    s <- H.get
     liftEffect $ E.preventDefault $ KE.toEvent ev
     let char = KE.key ev
     if (char == " ") then do
-      case s.game.gameStatus of
-        Playing -> do
-          H.modify_ (\st -> st { game = s.game { keyFlag = true } })
-        Opening -> do
-          H.modify_ (\st -> st { game = s.game { gameStatus = Playing, keyFlag = true } })
-          handleAction Draw
-          _ <- H.fork do
-            doLoop
-          pure unit
-        GameOver result wait -> do
-          case wait of 
-            Waiting -> pure unit
-            Ready -> do
-              H.modify_ (\st -> st { game = initialGame })
-              handleAction Draw
-        _ -> do
-          pure unit
+      handleAction HandleDown
     else 
       pure unit
     pure unit
 
   HandleKeyUp sid ev -> do
-    s <- H.get
     liftEffect $ E.preventDefault $ KE.toEvent ev
     let char = KE.key ev
     if (char == " ") then do
-      case s.game.gameStatus of
-        Playing -> do
-          H.modify_ (\st -> st { game = s.game { keyFlag = false } })
-        _ -> do
-          pure unit
+      handleAction HandleUp
     else 
       pure unit
     pure unit
 
+  HandleDown -> do
+    s <- H.get
+    case s.game.gameStatus of
+      Playing -> do
+        H.modify_ (\st -> st { game = s.game { keyFlag = true } })
+      Opening -> do
+        H.modify_ (\st -> st { game = s.game { gameStatus = Playing, keyFlag = true } })
+        handleAction Draw
+        _ <- H.fork do
+          doLoop
+        pure unit
+      GameOver result wait -> do
+        case wait of 
+          Waiting -> pure unit
+          Ready -> do
+            H.modify_ (\st -> st { game = initialGame })
+            handleAction Draw
+      _ -> do
+        pure unit
 
+  HandleTouchStart sid ev -> do
+    liftEffect $ E.preventDefault $ TE.toEvent ev
+    handleAction HandleDown
+
+  HandleTouchEnd sid ev -> do
+    liftEffect $ E.preventDefault $ TE.toEvent ev
+    handleAction HandleUp
+
+  HandleUp -> do
+    s <- H.get
+    case s.game.gameStatus of
+      Playing -> do
+        H.modify_ (\st -> st { game = s.game { keyFlag = false } })
+      _ -> do
+        pure unit
+  
   Draw -> do
     s <- H.get
     let rocket = s.images.rocket
