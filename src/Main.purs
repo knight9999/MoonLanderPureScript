@@ -3,7 +3,6 @@ module Main where
 import Prelude
 
 import Effect (Effect)
-import Effect.Console (log)
 import MoonLander as MoonLander
 import Halogen.Aff as HA
 import Halogen.VDom.Driver (runUI)

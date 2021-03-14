@@ -2,51 +2,51 @@ module MoonLander
   ( component
   ) where
 
-import Prelude
+import Data.Array
+import Data.Either
+import Data.Int
+import Data.Number.Format
+import Data.Traversable
+import Effect.Aff.Class
+import Effect.Class
+import Effect.Exception
+import Effect.Random
+import Prelude (Unit, bind, discard, map, mempty, negate, pure, unit, void, ($), (*), (+), (-), (/), (<), (<$>), (<<<), (<=), (<>), (=<<), (==), (>=))
 
+import CanvasExtra as GCE
 import Data.Maybe (Maybe(..))
-
+import Effect (Effect, foreachE)
+import Effect.Aff (Aff, delay, Milliseconds(..), makeAff)
+import Effect.Console (log)
+import Graphics.Canvas (Context2D)
+import Graphics.Canvas as GC
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Core as HC
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Halogen.Query.Event as ES
-
-import Graphics.Canvas (Context2D)
-import Graphics.Canvas as GC
-import Unsafe.Coerce (unsafeCoerce)
+import Math as Math
 import Partial.Unsafe (unsafePartial)
-
-import Effect (Effect, foreachE)
-import Effect.Console (log)
-import Effect.Class
-import Effect.Aff.Class
-import Effect.Aff (Aff, delay, Milliseconds(..), makeAff)
-
+import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event as E
 import Web.HTML (window) as Web
 import Web.HTML.HTMLDocument as HTMLDocument
+import Web.HTML.HTMLImageElement as IE
 import Web.HTML.Window (document) as Web
 import Web.UIEvent.KeyboardEvent (KeyboardEvent)
 import Web.UIEvent.KeyboardEvent as KE
 import Web.UIEvent.KeyboardEvent.EventTypes as KET
-import Web.HTML.HTMLImageElement as IE
-
-import Data.Int
-import Data.Array
-import Data.Traversable
-import Math as Math
-import Data.Either
-import Effect.Exception
-import Effect.Random
-
-import Data.Number.Format
-
-import CanvasExtra as GCE
+-- import Web.TouchEvent.TouchEvent(TouchEvent)
+-- import Web.TouchEvent.TouchEvent as TE
+-- import Web.TouchEvent.EventTypes as TET
 
 data Action
-  = Init | Draw | HandleKeyUp H.SubscriptionId KeyboardEvent | HandleKeyDown H.SubscriptionId KeyboardEvent
+  = Init | Draw 
+  | HandleKeyUp H.SubscriptionId KeyboardEvent
+  | HandleKeyDown H.SubscriptionId KeyboardEvent
+  -- | HandleTouchStart H.SubscriptionId TouchEvent
+  -- | HandleTouchEnd H.SubscriptionId TouchEvent
 
 data GameResult
   = Success | Failure
@@ -136,7 +136,7 @@ render state = do
 explain :: forall w i. HH.HTML w i
 explain = do
   HH.div
-    [ HP.attr (HC.AttrName "style") "display: inline-block; vertical-align: top; margin-left: 20px;" ]
+    [ HP.attr (HC.AttrName "class") "explain" ]
     [ HH.h2 [] [ HH.text "遊び方" ]
     , HH.div [] [ HH.text "スペースキーを押すと、ロケットが上方に加速します。" ]
     , HH.div [] [ HH.text "スペースキーを離すとと、ロケットが重力に引かれて落下し始めます。" ]
@@ -238,6 +238,11 @@ handleAction = case _ of
         KET.keyup
         (HTMLDocument.toEventTarget document)
         (map (HandleKeyUp sid) <<< KE.fromEvent)
+    -- H.subscribe' \sid ->
+    --   ES.eventListener
+    --     TET.touchstart
+    --     (HTMLDocument.toEventTarget document)
+    --     (map (HandleTouchStart sid) <<< TE.fromEvent)
     H.subscribe' \sid ->
       ES.eventListener
         KET.keydown
@@ -247,6 +252,7 @@ handleAction = case _ of
 
   HandleKeyDown sid ev -> do
     s <- H.get
+    liftEffect $ E.preventDefault $ KE.toEvent ev
     let char = KE.key ev
     if (char == " ") then do
       case s.game.gameStatus of
@@ -272,6 +278,7 @@ handleAction = case _ of
 
   HandleKeyUp sid ev -> do
     s <- H.get
+    liftEffect $ E.preventDefault $ KE.toEvent ev
     let char = KE.key ev
     if (char == " ") then do
       case s.game.gameStatus of

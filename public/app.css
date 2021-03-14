@@ -1,0 +1,8 @@
+
+.explain {
+  display: inline-block; vertical-align: top; margin-left: 20px;
+}
+
+@media screen and (max-width: 480px) {
+.explain { display: none; }
+}

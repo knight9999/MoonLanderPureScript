@@ -12,6 +12,7 @@ You can edit this file as you like.
   , "psci-support"
   , "random"
   , "web-html"
+  , "web-touchevents"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
