@@ -252,7 +252,7 @@ handleAction = case _ of
         (map (HandleTouchStart sid) <<< TE.fromEvent)
     H.subscribe' \sid ->
       ES.eventListener
-        TET.touchstart
+        TET.touchend
         (HTMLDocument.toEventTarget document)
         (map (HandleTouchEnd sid) <<< TE.fromEvent)
     pure unit
