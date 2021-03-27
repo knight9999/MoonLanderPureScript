@@ -14,5 +14,6 @@ $ npm run build
 
 # プレイ
 
-https://knight9999.github.io/MoonLanderPureScriptPlay/
+https://knight9999.github.io/MoonLanderPureScript/
+
 
