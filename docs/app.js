@@ -8223,7 +8223,9 @@ var PS = {};
   $PS["Web.TouchEvent.EventTypes"] = $PS["Web.TouchEvent.EventTypes"] || {};
   var exports = $PS["Web.TouchEvent.EventTypes"];
   var touchstart = "touchstart";
+  var touchend = "touchend";
   exports["touchstart"] = touchstart;
+  exports["touchend"] = touchend;
 })(PS);
 (function(exports) {
   "use strict";
@@ -8665,7 +8667,7 @@ var PS = {};
                                                           })());
                                                       }))(function () {
                                                           return Control_Bind.discard(Control_Bind.discardUnit)(Halogen_Query_HalogenM.bindHalogenM)(Halogen_Query_HalogenM["subscribe'"](function (sid) {
-                                                              return Halogen_Query_Event.eventListener(Web_TouchEvent_EventTypes.touchstart)(Web_HTML_HTMLDocument.toEventTarget(document))((function () {
+                                                              return Halogen_Query_Event.eventListener(Web_TouchEvent_EventTypes.touchend)(Web_HTML_HTMLDocument.toEventTarget(document))((function () {
                                                                   var $133 = Data_Functor.map(Data_Maybe.functorMaybe)(HandleTouchEnd.create(sid));
                                                                   return function ($134) {
                                                                       return $133(Web_TouchEvent_TouchEvent.fromEvent($134));
