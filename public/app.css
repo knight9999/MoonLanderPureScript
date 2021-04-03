@@ -3,6 +3,23 @@
   display: inline-block; vertical-align: top; margin-left: 20px;
 }
 
+#canvas {
+  width: 400px;
+  height: 600px;
+}
+
+body {
+  -webkit-user-select: none;
+  margin: 0px;
+  padding: 0px;
+}
+
+
 @media screen and (max-width: 480px) {
+body {
+  position: fixed;
+  height: 100%;
+  width: 100%;
+}
 .explain { display: none; }
 }

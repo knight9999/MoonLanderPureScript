@@ -11,9 +11,10 @@ import Effect.Aff.Class
 import Effect.Class
 import Effect.Exception
 import Effect.Random
-import Prelude (Unit, bind, discard, map, mempty, negate, pure, unit, void, ($), (*), (+), (-), (/), (<), (<$>), (<<<), (<=), (<>), (=<<), (==), (>=))
 
 import CanvasExtra as GCE
+import Data.Function ((#))
+import Data.JSDate (toString)
 import Data.Maybe (Maybe(..))
 import Effect (Effect, foreachE)
 import Effect.Aff (Aff, delay, Milliseconds(..), makeAff)
@@ -21,25 +22,35 @@ import Effect.Console (log)
 import Graphics.Canvas (Context2D)
 import Graphics.Canvas as GC
 import Halogen as H
+import Halogen.HTML (elementNS)
 import Halogen.HTML as HH
 import Halogen.HTML.Core as HC
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Halogen.Query.Event as ES
+import MatchMedia as MM
 import Math as Math
 import Partial.Unsafe (unsafePartial)
+import Prelude (Unit, bind, discard, map, mempty, negate, pure, unit, void, ($), (*), (+), (-), (/), (>), (<), (<$>), (<<<), (<=), (<>), (=<<), (==), (>=))
 import Unsafe.Coerce (unsafeCoerce)
+import Web.DOM.Document as WDD
+import Web.DOM.Element as WDE
+import Web.DOM.NonElementParentNode as WDN
 import Web.Event.Event as E
 import Web.HTML (window) as Web
+import Web.HTML.Event.EventTypes (offline)
 import Web.HTML.HTMLDocument as HTMLDocument
+import Web.HTML.HTMLElement as HTMLElement
 import Web.HTML.HTMLImageElement as IE
 import Web.HTML.Window (document) as Web
+import Web.TouchEvent.EventTypes as TET
+import Web.TouchEvent.Touch as Touch
+import Web.TouchEvent.TouchEvent (TouchEvent)
+import Web.TouchEvent.TouchEvent as TE
+import Web.TouchEvent.TouchList as TEL
 import Web.UIEvent.KeyboardEvent (KeyboardEvent)
 import Web.UIEvent.KeyboardEvent as KE
 import Web.UIEvent.KeyboardEvent.EventTypes as KET
-import Web.TouchEvent.TouchEvent(TouchEvent)
-import Web.TouchEvent.TouchEvent as TE
-import Web.TouchEvent.EventTypes as TET
 
 data Action
   = Init | Draw 
@@ -49,6 +60,7 @@ data Action
   | HandleKeyDown H.SubscriptionId KeyboardEvent
   | HandleTouchStart H.SubscriptionId TouchEvent
   | HandleTouchEnd H.SubscriptionId TouchEvent
+  | MediaTypeChanged H.SubscriptionId MM.MatchMedia
 
 data GameResult
   = Success | Failure
@@ -60,7 +72,12 @@ data GameStatus
   = Opening | Playing | GameOver GameResult GameOverWait
 
 type State = {
-  canvas ::
+  env :: 
+  { width :: Int
+  , height :: Int
+  , isMobile :: Boolean
+  }
+, canvas ::
   { width :: Int
   , height :: Int
   }
@@ -93,7 +110,13 @@ component =
 
 initialState :: forall i. i -> State
 initialState _ = {
-  canvas: 
+  env:
+  {
+    width: 400
+  , height: 600
+  , isMobile: true
+  }
+, canvas: 
   { 
     width: 400
   , height: 600
@@ -116,14 +139,22 @@ render :: forall m. (MonadEffect m) => State -> H.ComponentHTML Action () m
 render state = do
   HH.div_
     [ HH.div
-      [ ]
-      [ HH.text "Moon Lander" ]
-    , HH.div
       [ HP.attr (HC.AttrName "style") "display: inline-block" ]
       [ HH.canvas
         [ HP.id_ "canvas"
         , HP.width state.canvas.width
         , HP.height state.canvas.height
+        , HP.style 
+            ( "width:" 
+            <> (if state.env.isMobile 
+                 then toStringAs decimal state.env.width 
+                 else toStringAs decimal state.canvas.width)
+            <> "px; height: " 
+            <> (if state.env.isMobile
+                 then toStringAs decimal state.env.height 
+                 else toStringAs decimal state.canvas.height)
+            <> "px;"
+            )
         ]
       , HH.canvas
         [ HP.id_ "hidden_canvas"
@@ -222,6 +253,13 @@ handleAction = case _ of
       pure rocket_src'
     H.modify_ (\st -> st { images = (st.images { rocket = Just rocket_src }) })
 
+    mm <- liftEffect do
+      mm <- MM.getMatchMedia "screen and (max-width: 480px)"
+      pure mm
+    H.subscribe' \sid ->
+      MM.eventListener
+        mm
+        (map (MediaTypeChanged sid) <<< MM.fromEvent)
     -- Set Stars
     stars <- liftEffect $ traverse (\_ -> do
       x <- toNumber <$> randomInt 1 (s.canvas.width-2)
@@ -256,9 +294,24 @@ handleAction = case _ of
         (HTMLDocument.toEventTarget document)
         (map (HandleTouchEnd sid) <<< TE.fromEvent)
     pure unit
+  
+  MediaTypeChanged sid mm -> do
+    s <- H.get
+    env <- liftEffect do
+      matches' <- (MM.matches mm)
+      log $ if matches' then "MOBILE'" else "PC'"
+      maybeBody <- HTMLDocument.body =<< Web.document =<< Web.window
+      case (HTMLElement.toElement <$> maybeBody) of
+        Nothing -> pure { width: 0, height: 0, isMobile: matches' }
+        Just body -> do
+          height <- WDE.clientHeight body
+          width <- WDE.clientWidth body
+          log $ (toStringWith (fixed 4) height) <> ":" <> (toStringWith (fixed 4) width)
+          pure { width: floor width, height: floor height, isMobile: matches' }
+    H.modify_ (\st -> st { env = s.env { width = env.width, height = env.height, isMobile = env.isMobile } })
+    pure unit
 
   HandleKeyDown sid ev -> do
-    liftEffect $ E.preventDefault $ KE.toEvent ev
     let char = KE.key ev
     if (char == " ") then do
       handleAction HandleDown
@@ -274,6 +327,14 @@ handleAction = case _ of
     else 
       pure unit
     pure unit
+
+  HandleTouchStart sid ev -> do
+    liftEffect $ E.preventDefault $ TE.toEvent ev
+    handleAction HandleDown
+
+  HandleTouchEnd sid ev -> do
+    liftEffect $ E.preventDefault $ TE.toEvent ev
+    handleAction HandleUp
 
   HandleDown -> do
     s <- H.get
@@ -295,14 +356,6 @@ handleAction = case _ of
       _ -> do
         pure unit
 
-  HandleTouchStart sid ev -> do
-    liftEffect $ E.preventDefault $ TE.toEvent ev
-    handleAction HandleDown
-
-  HandleTouchEnd sid ev -> do
-    liftEffect $ E.preventDefault $ TE.toEvent ev
-    handleAction HandleUp
-
   HandleUp -> do
     s <- H.get
     case s.game.gameStatus of
@@ -310,7 +363,7 @@ handleAction = case _ of
         H.modify_ (\st -> st { game = s.game { keyFlag = false } })
       _ -> do
         pure unit
-  
+
   Draw -> do
     s <- H.get
     let rocket = s.images.rocket
