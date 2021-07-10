@@ -299,7 +299,7 @@ handleAction = case _ of
     s <- H.get
     env <- liftEffect do
       matches' <- (MM.matches mm)
-      log $ if matches' then "MOBILE'" else "PC'"
+      -- log $ if matches' then "MOBILE'" else "PC'"
       maybeBody <- HTMLDocument.body =<< Web.document =<< Web.window
       case (HTMLElement.toElement <$> maybeBody) of
         Nothing -> pure { width: 0, height: 0, isMobile: matches' }
